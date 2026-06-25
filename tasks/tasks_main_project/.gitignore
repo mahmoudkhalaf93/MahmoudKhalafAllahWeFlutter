@@ -1,0 +1,94 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+# تجاهل الملفات الكبيرة والبرامج
+*.exe
+*.zip
+*.rar
+
+# تجاهل مفاتيح الأمان والبيانات الحساسة
+*.env
+*.key
+key.properties
+android/key.jks
+android/app/key.jks
+
+# تجاهل ملفات فايربيز المؤقتة (اختياري)
+.firebase/
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# ملفات فلاتر البرمجية والمؤقتة (الأهم)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# ملفات الويب (Web)
+.build_builer_info/
+web/assets/
+
+# ملفات الويندوز والـ PC (Windows desktop)
+windows/flutter/ephemeral/
+windows/flutter/generated_plugin_registrants.h
+
+# ملفات نظام أندرويد واستوديو (Android)
+.gradle/
+local.properties
+/android/app/Release/
+/android/app/Debug/
+*.apk
+*.aab
+
+# ملفات الإعدادات الخاصة بـ Android Studio و VS Code
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ملفات النظام العامة
+.DS_Store
+Thumbs.db
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
