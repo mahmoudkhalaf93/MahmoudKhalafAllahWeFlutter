@@ -10,7 +10,8 @@ import '../favorites/favorites_screen.dart';
 import '../cart/cart_screen.dart';
 
 class OrderNowScreen extends StatefulWidget {
-  const OrderNowScreen({super.key});
+  final bool isShell;
+  const OrderNowScreen({super.key, this.isShell = false});
 
   @override
   State<OrderNowScreen> createState() => _OrderNowScreenState();
@@ -27,6 +28,11 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEBEBEB),
+      appBar: widget.isShell ? null : AppBar(
+        title: const Text('Order Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFF4A73D),
+      ),
       body: Stack(
         children: [
           Column(
@@ -41,14 +47,15 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
                     height: 220,
                     fit: BoxFit.fitWidth,
                   ),
-                  Positioned(
-                    top: 40,
-                    left: 10,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                  if (!widget.isShell)
+                    Positioned(
+                      top: 40,
+                      left: 10,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ),
-                  ),
                 ],
               ),
 
@@ -64,7 +71,7 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
                 ),
               ),
 
-              // 2. Categories List (Matching CategoryItems style)
+              // 2. Categories List
               Expanded(
                 child: BlocBuilder<MenuCubit, MenuState>(
                   builder: (context, state) {
@@ -86,7 +93,7 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
             ],
           ),
 
-          // 3. Floating Action Buttons with Stroke
+          // 3. Floating Action Buttons
           Positioned(
             bottom: 30,
             right: 20,
@@ -121,11 +128,10 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Background Card
             Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.79,
+                width: MediaQuery.of(context).size.width * 0.85,
                 margin: const EdgeInsets.only(left: 55, right: 15),
                 height: 110,
                 decoration: BoxDecoration(
@@ -140,24 +146,12 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      category.name ?? '',
-                      style: const TextStyle(fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      category.description ?? 'Explore our delicious items',
-                      style: const TextStyle(fontSize: 11, color: AppColors.gray),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(category.name ?? '', style: const TextStyle(fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(category.description ?? 'Explore our delicious items', style: const TextStyle(fontSize: 11, color: AppColors.gray), maxLines: 2, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
             ),
-
-            // Image Card - Half-in, Half-out
             Positioned(
               left: 10,
               child: Container(
@@ -167,9 +161,7 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 5)),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 5))],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(18),
@@ -181,8 +173,6 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
                 ),
               ),
             ),
-
-            // Action Button (Arrow) - Overlapping the edge
             Positioned(
               right: 12,
               child: Container(
@@ -192,15 +182,9 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
                   color: Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.grey.shade100, width: 2),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 3)),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 3))],
                 ),
-                child: const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 20,
-                  color: AppColors.lightOrange,
-                ),
+                child: const Icon(Icons.arrow_forward_ios, size: 20, color: AppColors.lightOrange),
               ),
             ),
           ],
@@ -218,7 +202,7 @@ class _OrderNowScreenState extends State<OrderNowScreen> {
         decoration: BoxDecoration(
           color: bgColor,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3), // White Stroke
+          border: Border.all(color: Colors.white, width: 3),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 5))],
         ),
         child: Icon(icon, color: iconColor, size: isLarge ? 30 : 22),

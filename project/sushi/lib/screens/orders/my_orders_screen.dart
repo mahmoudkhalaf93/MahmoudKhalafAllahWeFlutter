@@ -8,7 +8,8 @@ import '../../models/order_model.dart';
 import 'order_tracking_screen.dart';
 
 class MyOrdersScreen extends StatefulWidget {
-  const MyOrdersScreen({super.key});
+  final bool isShell;
+  const MyOrdersScreen({super.key, this.isShell = false});
 
   @override
   State<MyOrdersScreen> createState() => _MyOrdersScreenState();
@@ -25,7 +26,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: AppBar(
+      appBar: widget.isShell ? null : AppBar(
         title: const Text('Orders', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFFF4A73D),
@@ -33,7 +34,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
       ),
       body: BlocBuilder<OrdersCubit, OrdersState>(
         builder: (context, state) {
-          if (state is OrdersLoading) return const Center(child: CircularProgressIndicator());
+          if (state is OrdersLoading) return const Center(child: CircularProgressIndicator(color: AppColors.lightOrange));
           if (state is OrdersError) return Center(child: Text(state.message));
           if (state is OrdersLoaded) {
             return ListView(
@@ -51,7 +52,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                   ...state.historyOrders.map((o) => _buildOrderCard(o, false)),
                 ],
                 if (state.activeOrders.isEmpty && state.historyOrders.isEmpty)
-                  const Center(child: Text('No orders found yet.')),
+                  const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No orders found yet.'))),
               ],
             );
           }
@@ -80,38 +81,25 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
             Text(DateFormat('MMM dd, yyyy • hh:mm a').format(order.createdAt), style: const TextStyle(fontSize: 12)),
           ],
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _getStatusColor(order.status).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Text(
-                order.status.name.toUpperCase().replaceAll('_', ' '),
-                style: TextStyle(color: _getStatusColor(order.status), fontSize: 9, fontWeight: FontWeight.bold),
-              ),
-            ),
-            if (isActive) const Icon(Icons.chevron_right, color: Colors.grey),
-          ],
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(color: _getStatusColor(order.status).withOpacity(0.1), borderRadius: BorderRadius.circular(5)),
+          child: Text(_getStatusLabel(order.status), style: TextStyle(color: _getStatusColor(order.status), fontSize: 9, fontWeight: FontWeight.bold)),
         ),
         onTap: () {
-          if (isActive) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => OrderTrackingScreen(orderId: order.id)));
-          }
+          Navigator.push(context, MaterialPageRoute(builder: (context) => OrderTrackingScreen(orderId: order.id)));
         },
       ),
     );
   }
 
+  String _getStatusLabel(OrderStatus status) => status.name.toUpperCase().replaceAll('_', ' ');
+
   Color _getStatusColor(OrderStatus status) {
     switch (status) {
       case OrderStatus.delivered: return Colors.green;
       case OrderStatus.cancelledByCustomer:
-      case OrderStatus.cancelledByRestaurant:
-      case OrderStatus.failedDelivery: return Colors.red;
+      case OrderStatus.cancelledByRestaurant: return Colors.red;
       case OrderStatus.pending: return Colors.orange;
       default: return Colors.blue;
     }

@@ -34,6 +34,7 @@ class OrderModel {
   final DateTime updatedAt;
   final GeoPoint? deliveryLocation;
   final GeoPoint? driverLocation;
+  final bool isPaidToCompany; // New field for driver finance
 
   OrderModel({
     required this.id,
@@ -48,6 +49,7 @@ class OrderModel {
     required this.updatedAt,
     this.deliveryLocation,
     this.driverLocation,
+    this.isPaidToCompany = false,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json, String id) {
@@ -67,6 +69,7 @@ class OrderModel {
       updatedAt: json['updatedAt'] != null ? (json['updatedAt'] as Timestamp).toDate() : DateTime.now(),
       deliveryLocation: json['deliveryLocation'],
       driverLocation: json['driverLocation'],
+      isPaidToCompany: json['isPaidToCompany'] ?? false,
     );
   }
 
@@ -83,6 +86,7 @@ class OrderModel {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'deliveryLocation': deliveryLocation,
       'driverLocation': driverLocation,
+      'isPaidToCompany': isPaidToCompany,
     };
   }
 

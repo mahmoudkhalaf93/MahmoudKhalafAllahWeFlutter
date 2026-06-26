@@ -6,15 +6,18 @@ import 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   final AuthService _authService;
 
-  AuthCubit(this._authService) : super(AuthInitial()) {
-    checkAuth();
-  }
+  AuthCubit(this._authService) : super(AuthInitial());
 
+  // We no longer call checkAuth in the constructor to avoid early Firebase access
   void checkAuth() {
-    final user = _authService.currentUser;
-    if (user != null) {
-      emit(Authenticated(user));
-    } else {
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        emit(Authenticated(user));
+      } else {
+        emit(Unauthenticated());
+      }
+    } catch (e) {
       emit(Unauthenticated());
     }
   }

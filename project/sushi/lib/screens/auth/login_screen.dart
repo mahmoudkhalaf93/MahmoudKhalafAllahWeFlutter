@@ -204,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return InkResponse(
       onTap: onTap,
       radius: 35,
-      child: Image.asset(assetPath, height: 60, fit: BoxFit.contain),
+      child: Image.asset(assetPath, height: 55, fit: BoxFit.contain),
     );
   }
 }

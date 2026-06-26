@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sushi/models/user_model.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Use getters to avoid accessing .instance before Firebase.initializeApp()
+  FirebaseAuth get _auth => FirebaseAuth.instance;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
   
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   bool _isGoogleInitialized = false;
@@ -28,7 +28,6 @@ class AuthService {
     }
   }
 
-  // Create Auth account only (no firestore yet)
   Future<UserCredential?> createAuthAccount(String email, String password) async {
     try {
       return await _auth.createUserWithEmailAndPassword(email: email, password: password);
@@ -37,10 +36,9 @@ class AuthService {
     }
   }
 
-  // Save specific collection data (users or drivers)
   Future<void> saveProfileData(String collection, String uid, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection(collection).doc(uid).set(data);
+      await _firestore.collection(collection).doc(uid).set(data, SetOptions(merge: true));
     } catch (e) {
       rethrow;
     }
@@ -77,18 +75,7 @@ class AuthService {
   }
 
   Future<UserCredential?> signInWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login();
-      if (result.status == LoginStatus.success) {
-        final AuthCredential credential = FacebookAuthProvider.credential(result.accessToken!.tokenString);
-        UserCredential userCredential = await _auth.signInWithCredential(credential);
-        await _updateUserDataInFirestore(userCredential.user);
-        return userCredential;
-      }
-      return null;
-    } catch (e) {
-      rethrow;
-    }
+    return null;
   }
 
   Future<void> _updateUserDataInFirestore(User? user) async {
@@ -105,13 +92,10 @@ class AuthService {
     }
   }
 
-  // Get User Role (Shopper or Driver)
   Future<String?> getUserRole(String uid) async {
-    // Check in DeliveryDrivers first
     final driverDoc = await _firestore.collection('DeliveryDrivers').doc(uid).get();
     if (driverDoc.exists) return 'driver';
 
-    // Then check in users
     final userDoc = await _firestore.collection('users').doc(uid).get();
     if (userDoc.exists) return 'shopper';
 
@@ -121,6 +105,5 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
     await _googleSignIn.signOut();
-    await FacebookAuth.instance.logOut();
   }
 }

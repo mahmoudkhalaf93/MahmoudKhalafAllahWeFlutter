@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,9 +12,11 @@ import '../../widgets/app_colors.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
 import '../../models/restaurant_model.dart';
-import '../../blocs/auth/auth_cubit.dart';
-import '../../blocs/auth/auth_state.dart';
 import '../../screens/auth/welcome_screen.dart';
+
+import '../driver_menu/driver_profile_screen.dart';
+import '../driver_menu/driver_orders_screen.dart';
+import '../driver_menu/driver_finance_screen.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -29,17 +32,60 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   RestaurantModel? _restaurant;
   bool _isViewingActiveOrder = false;
 
+  BitmapDescriptor? _driverIcon;
+  BitmapDescriptor? _shopIcon;
+  BitmapDescriptor? _customerIcon;
+
   @override
   void initState() {
     super.initState();
     _loadRestaurantInfo();
-    _startLocationUpdates();
+    _loadCustomIcons();
+    _initLocationTracking();
   }
 
   @override
   void dispose() {
     _locationSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadCustomIcons() async {
+    _driverIcon = await _getMarkerIcon(Icons.delivery_dining, Colors.orange);
+    _shopIcon = await _getMarkerIcon(Icons.restaurant, Colors.red);
+    _customerIcon = await _getMarkerIcon(Icons.person_pin_circle, Colors.blue);
+    if (mounted) setState(() {});
+  }
+
+  Future<BitmapDescriptor> _getMarkerIcon(IconData iconData, Color color) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    const double size = 85.0; // Reduced size from 120.0
+    
+    // Draw Background Circle
+    final Paint paint = Paint()..color = color;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
+    
+    // Draw Border
+    final Paint borderPaint = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 4;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, borderPaint);
+
+    // Draw Icon
+    TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: size * 0.6,
+        fontFamily: iconData.fontFamily,
+        color: Colors.white,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2));
+
+    final image = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
   }
 
   void _loadRestaurantInfo() async {
@@ -49,48 +95,54 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     }
   }
 
-  void _startLocationUpdates() {
-    late LocationSettings locationSettings;
-    if (Platform.isAndroid) {
-      locationSettings = AndroidSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 0,
-        intervalDuration: const Duration(seconds: 5),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText: "Tracking location for delivery",
-          notificationTitle: "Sushi Delivery",
-          enableWakeLock: true,
-        ),
-      );
-    } else {
-      locationSettings = const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 0);
+  void _initLocationTracking() async {
+    bool hasPermission = await _handleLocationPermissions();
+    if (hasPermission) {
+      _startLocationUpdates();
     }
+  }
 
-    _locationSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
+  Future<bool> _handleLocationPermissions() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return false;
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return false;
+    }
+    return permission != LocationPermission.deniedForever;
+  }
+
+  void _startLocationUpdates() {
+    _locationSubscription?.cancel();
+    _locationSubscription = Geolocator.getPositionStream(
+      locationSettings: AndroidSettings(accuracy: LocationAccuracy.high, distanceFilter: 10, intervalDuration: const Duration(seconds: 10)),
+    ).listen((Position position) {
       if (mounted) setState(() => _currentPosition = position);
-      
-      final authState = context.read<AuthCubit>().state;
-      final uid = authState is Authenticated ? authState.user.uid : FirebaseAuth.instance.currentUser?.uid;
-      
-      if (uid != null) {
-        final geoPoint = GeoPoint(position.latitude, position.longitude);
-        
-        // 1. Update Global Driver Location
-        FirebaseFirestore.instance.collection('DeliveryDrivers').doc(uid).set({
-          'location': geoPoint,
-          'lastUpdate': FieldValue.serverTimestamp(),
-          'isOnline': true,
-        }, SetOptions(merge: true));
-
-        // 2. Automatically update Active Order if accepted
-        if (_activeOrderId != null) {
-          FirebaseFirestore.instance.collection('orders').doc(_activeOrderId).update({
-            'driverLocation': geoPoint,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        }
-      }
+      _syncLocationToFirestore(position);
     });
+  }
+
+  Future<void> _syncLocationToFirestore(Position position) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    
+    final geoPoint = GeoPoint(position.latitude, position.longitude);
+    
+    // Update global driver status
+    FirebaseFirestore.instance.collection('DeliveryDrivers').doc(uid).set({
+      'location': geoPoint,
+      'lastUpdate': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // Update active order link
+    if (_activeOrderId != null) {
+      await FirebaseFirestore.instance.collection('orders').doc(_activeOrderId).update({
+        'driverLocation': geoPoint,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint("Location Synced to Order: $_activeOrderId");
+    }
   }
 
   @override
@@ -102,20 +154,15 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
           
-          final authState = context.read<AuthCubit>().state;
-          final String? uid = authState is Authenticated ? authState.user.uid : FirebaseAuth.instance.currentUser?.uid;
-
+          final uid = FirebaseAuth.instance.currentUser?.uid;
           if (uid == null) return const Scaffold(body: Center(child: Text('Not authenticated')));
 
           final allOrders = snapshot.data!.docs.map((doc) => OrderModel.fromJson(doc.data() as Map<String, dynamic>, doc.id)).toList();
-
           final availableOrders = allOrders.where((o) => o.status == OrderStatus.readyForPickup && o.driverId == null).toList();
           final myActiveOrders = allOrders.where((o) => o.driverId == uid && o.status.index < OrderStatus.delivered.index).toList();
 
-          OrderModel? activeOrder;
           if (myActiveOrders.isNotEmpty) {
-            activeOrder = myActiveOrders.first;
-            _activeOrderId = activeOrder.id;
+            _activeOrderId = myActiveOrders.first.id;
           } else {
             _activeOrderId = null;
             _isViewingActiveOrder = false;
@@ -124,8 +171,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           return Scaffold(
             backgroundColor: const Color(0xFFF7F7F7),
             appBar: AppBar(
-              title: Text(_isViewingActiveOrder ? 'Active Task' : 'Driver Dashboard', 
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: Text(_isViewingActiveOrder ? 'Active Task' : 'Driver Dashboard', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               centerTitle: true,
               backgroundColor: const Color(0xFFF4A73D),
               elevation: 0,
@@ -134,9 +180,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 : null,
             ),
             drawer: _isViewingActiveOrder ? null : _buildDriverDrawer(),
-            body: (_isViewingActiveOrder && activeOrder != null)
-                ? _buildActiveOrderWorkflow(activeOrder)
+            body: (_isViewingActiveOrder && myActiveOrders.isNotEmpty)
+                ? _buildActiveOrderWorkflow(myActiveOrders.first)
                 : _buildAvailableOrdersList(availableOrders, myActiveOrders),
+            floatingActionButton: _isViewingActiveOrder ? FloatingActionButton(
+              onPressed: () async {
+                Position pos = await Geolocator.getCurrentPosition();
+                await _syncLocationToFirestore(pos);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location Manually Synced! 🛰️')));
+              },
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location, color: Color(0xFFF4A73D)),
+            ) : null,
           );
         },
       ),
@@ -202,56 +257,35 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           child: GoogleMap(
             initialCameraPosition: CameraPosition(
               target: LatLng(order.deliveryLocation?.latitude ?? 30.0, order.deliveryLocation?.longitude ?? 31.0),
-              zoom: 12,
+              zoom: 13,
             ),
             markers: {
               if (_currentPosition != null)
-                Marker(markerId: const MarkerId('driver'), position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange)),
+                Marker(markerId: const MarkerId('driver'), position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude), icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange), infoWindow: const InfoWindow(title: 'You')),
               if (_restaurant?.branches != null)
-                Marker(markerId: const MarkerId('restaurant'), position: LatLng(_restaurant!.branches![0].location!.latitude, _restaurant!.branches![0].location!.longitude), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
+                Marker(markerId: const MarkerId('restaurant'), position: LatLng(_restaurant!.branches![0].location!.latitude, _restaurant!.branches![0].location!.longitude), icon: _shopIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed), infoWindow: const InfoWindow(title: 'Shop')),
               if (order.deliveryLocation != null)
-                Marker(markerId: const MarkerId('customer'), position: LatLng(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure)),
+                Marker(markerId: const MarkerId('customer'), position: LatLng(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude), icon: _customerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure), infoWindow: const InfoWindow(title: 'Customer')),
             },
           ),
         ),
         Container(
           padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
           child: Column(
             children: [
-              // Standardized Tracking UI for Driver
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: AppColors.lightOrange.withOpacity(0.1), shape: BoxShape.circle),
-                    child: Icon(_getStatusIcon(order.status), color: AppColors.lightOrange, size: 30),
-                  ),
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.lightOrange.withOpacity(0.1), shape: BoxShape.circle), child: Icon(_getStatusIcon(order.status), color: AppColors.lightOrange, size: 30)),
                   const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(order.status.name.toUpperCase().replaceAll('_', ' '), 
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Text('Order #${order.id.substring(0, 5)}', style: const TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(order.status.name.toUpperCase().replaceAll('_', ' '), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text('Order #${order.id.substring(0, 5)}', style: const TextStyle(color: Colors.grey)),
+                  ])),
                 ],
               ),
               const SizedBox(height: 15),
-              LinearProgressIndicator(
-                value: (order.status.index + 1) / (OrderStatus.delivered.index + 1),
-                backgroundColor: Colors.grey.shade200,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(10),
-                valueColor: const AlwaysStoppedAnimation(AppColors.lightOrange),
-              ),
+              LinearProgressIndicator(value: (order.status.index + 1) / (OrderStatus.delivered.index + 1), minHeight: 8, borderRadius: BorderRadius.circular(10), backgroundColor: Colors.grey.shade200, valueColor: const AlwaysStoppedAnimation(AppColors.lightOrange)),
               const Divider(height: 40),
               _buildCustomerInfo(order.userId),
               const SizedBox(height: 20),
@@ -309,10 +343,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       height: 55,
       child: ElevatedButton(
         onPressed: () => _updateOrderStatus(order.id, nextStatus),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: nextStatus == OrderStatus.delivered ? Colors.green : AppColors.lightOrange,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        ),
+        style: ElevatedButton.styleFrom(backgroundColor: nextStatus == OrderStatus.delivered ? Colors.green : AppColors.lightOrange, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
         child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
       ),
     );
@@ -321,12 +352,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Future<void> _updateOrderStatus(String orderId, OrderStatus status) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    
-    final Map<String, dynamic> data = {
-      'status': status.name,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-    if (status == OrderStatus.driverAssigned) data['driverId'] = uid;
+    final Map<String, dynamic> data = {'status': status.name, 'updatedAt': FieldValue.serverTimestamp()};
+    if (status == OrderStatus.driverAssigned) {
+      data['driverId'] = uid;
+      _activeOrderId = orderId; 
+    }
     await FirebaseFirestore.instance.collection('orders').doc(orderId).update(data);
   }
 
@@ -337,14 +367,36 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Widget _buildDriverDrawer() {
-    final state = context.read<AuthCubit>().state;
-    final email = state is Authenticated ? state.user.email : FirebaseAuth.instance.currentUser?.email;
+    final email = FirebaseAuth.instance.currentUser?.email;
     return Drawer(
       child: Column(children: [
         UserAccountsDrawerHeader(decoration: const BoxDecoration(color: Color(0xFFF4A73D)), currentAccountPicture: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.delivery_dining, color: Color(0xFFF4A73D))), accountName: const Text('Driver Mode'), accountEmail: Text(email ?? '')),
-        ListTile(leading: const Icon(Icons.dashboard), title: const Text('Dashboard'), onTap: () => Navigator.pop(context)),
+        ListTile(
+          leading: const Icon(Icons.person),
+          title: const Text('My Profile'),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const DriverProfileScreen()));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.history),
+          title: const Text('Delivery History'),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const DriverOrdersScreen()));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.account_balance_wallet_outlined),
+          title: const Text('Finance & Balance'),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const DriverFinanceScreen()));
+          },
+        ),
         const Spacer(),
-        ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Logout', style: TextStyle(color: Colors.red)), onTap: () { context.read<AuthCubit>().logout(); Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()), (r) => false); }),
+        ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Logout', style: TextStyle(color: Colors.red)), onTap: () { FirebaseAuth.instance.signOut(); Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()), (r) => false); }),
       ]),
     );
   }

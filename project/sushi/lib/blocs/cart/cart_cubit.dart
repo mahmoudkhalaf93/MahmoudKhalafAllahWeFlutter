@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,7 +28,7 @@ class CartCubit extends Cubit<CartState> {
       }
       emit(state.copyWith(items: items));
     } catch (e) {
-      print("Error loading cart: $e");
+      debugPrint("Error loading cart: $e");
     }
   }
 
@@ -65,7 +66,7 @@ class CartCubit extends Cubit<CartState> {
       updatedItems[newItem.firebaseId!] = newItem;
       emit(state.copyWith(items: updatedItems));
     } catch (e) {
-      print("Error adding to cart: $e");
+      debugPrint("Error adding to cart: $e");
     }
   }
 
@@ -102,12 +103,24 @@ class CartCubit extends Cubit<CartState> {
       updatedItems.remove(firebaseId);
       emit(state.copyWith(items: updatedItems));
     } catch (e) {
-      print("Error removing from cart: $e");
+      debugPrint("Error removing from cart: $e");
     }
   }
 
   Future<void> calculateDelivery() async {
     try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        await Geolocator.openLocationSettings();
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+
       Position position = await Geolocator.getCurrentPosition();
       final doc = await _firestore.collection('restaurants').doc('sushir12').get();
       if (!doc.exists) return;
@@ -127,7 +140,7 @@ class CartCubit extends Cubit<CartState> {
       double fee = 15.0 + (4.0 * (minDistance / 1000.0));
       emit(state.copyWith(deliveryFee: fee));
     } catch (e) {
-      print("Error calculating delivery: $e");
+      debugPrint("Error calculating delivery: $e");
     }
   }
 
@@ -135,7 +148,7 @@ class CartCubit extends Cubit<CartState> {
     if (_uid == null || state.items.isEmpty) return null;
 
     try {
-      final position = await Geolocator.getCurrentPosition();
+      Position position = await Geolocator.getCurrentPosition();
       final order = OrderModel(
         id: '', 
         userId: _uid!,
@@ -153,7 +166,7 @@ class CartCubit extends Cubit<CartState> {
       await clear();
       return docRef.id;
     } catch (e) {
-      print("Error placing order: $e");
+      debugPrint("Error placing order: $e");
       return null;
     }
   }
@@ -167,7 +180,7 @@ class CartCubit extends Cubit<CartState> {
       }
       emit(const CartState(items: {}, deliveryFee: 0.0));
     } catch (e) {
-      print("Error clearing cart: $e");
+      debugPrint("Error clearing cart: $e");
     }
   }
 }

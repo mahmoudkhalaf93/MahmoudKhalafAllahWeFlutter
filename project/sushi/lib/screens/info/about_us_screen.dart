@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_colors.dart';
-import '../../widgets/app_strings.dart';
 
 class AboutUsScreen extends StatelessWidget {
-  const AboutUsScreen({super.key});
+  final bool isShell;
+  const AboutUsScreen({super.key, this.isShell = false});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      backgroundColor: Colors.white,
+      appBar: isShell ? null : AppBar(
         title: const Text('About Us'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.lightOrange,

@@ -9,13 +9,14 @@ import '../orders/my_orders_screen.dart';
 import '../auth/login_screen.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
+  final bool isShell;
+  const CartScreen({super.key, this.isShell = false});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.grayBackgroundProfile,
-      appBar: AppBar(
+      appBar: isShell ? null : AppBar(
         title: const Text('My Cart', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFFF4A73D),
@@ -139,8 +140,8 @@ class CartScreen extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(fontSize: isTotal ? 18 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
           Text(value, style: TextStyle(
-            fontSize: isTotal ? 22 : 14, 
-            fontWeight: FontWeight.bold, 
+            fontSize: isTotal ? 22 : 14,
+            fontWeight: FontWeight.bold,
             color: isTotal ? AppColors.lightOrange : AppColors.black,
           )),
         ],

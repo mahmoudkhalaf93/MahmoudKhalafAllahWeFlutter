@@ -7,7 +7,8 @@ import '../../widgets/menu_item_tile.dart';
 import '../menu/item_details_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+  final bool isShell;
+  const FavoritesScreen({super.key, this.isShell = false});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -24,7 +25,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.grayBackgroundProfileStrong,
-      appBar: AppBar(
+      appBar: widget.isShell ? null : AppBar(
         title: const Text('Favorites', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFFF4A73D),

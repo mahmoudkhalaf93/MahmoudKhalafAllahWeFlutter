@@ -17,9 +17,9 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAIEwG5ZJma_HHu8gKu0zJ-ABoGsSsqExU" />
 
-        <!-- Facebook Configuration -->
+        <!-- Facebook Disabled (App Deleted on FB)
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
-        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="7d5d9c799a4c8a2b8e8f8b8b8b8b8b8b"/> <!-- Replace with your actual client token from FB dashboard if needed -->
+        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="7d5d9c799a4c8a2b8e8f8b8b8b8b8b8b"/>
 
         <activity android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -34,6 +34,7 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
+        -->
 
         <activity
             android:name=".MainActivity"
@@ -64,8 +65,5 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- Custom queries for Facebook/Google -->
-        <package android:name="com.facebook.katana" />
     </queries>
 </manifest>
-

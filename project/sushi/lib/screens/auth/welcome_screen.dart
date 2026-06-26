@@ -28,7 +28,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               Positioned(
-                bottom: 100,
+                bottom: 140,
                 child: Image.asset(
                   'assets/images/layer_2.png',
                   width: 90,
@@ -56,8 +56,8 @@ class WelcomeScreen extends StatelessWidget {
               height: 55,
               child: ElevatedButton(
                 onPressed: () {
-                  // Shoppers can enter as Guest immediately
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                  // Navigate to Login Screen instead of Guest mode
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.lightOrange,

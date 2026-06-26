@@ -9,7 +9,6 @@ import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../../models/offer_model.dart';
 import '../../widgets/offer_card.dart';
-import '../../blocs/menu/menu_cubit.dart';
 import '../menu/menu_screen.dart';
 import '../cart/cart_screen.dart';
 import '../order_now/order_now_screen.dart';
@@ -20,7 +19,6 @@ import '../restaurant/restaurant_screen.dart';
 import '../info/about_us_screen.dart';
 import '../info/contact_us_screen.dart';
 import 'offer_items_screen.dart';
-import '../../models/item_model.dart';
 import '../auth/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,14 +31,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   UserModel? _userData;
-  List<OfferModel> _offers = [];
-  bool _isLoadingOffers = true;
+  
+  // Navigation State
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _loadOffers();
   }
 
   void _loadUserData() async {
@@ -55,18 +53,37 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _loadOffers() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('offers').get();
-      if (mounted) {
-        setState(() {
-          _offers = snapshot.docs.map((doc) => OfferModel.fromJson(doc.data(), doc.id)).toList();
-          _isLoadingOffers = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoadingOffers = false);
-      debugPrint("Error loading offers: $e");
+  // Get current title based on section
+  String _getTitle() {
+    switch (_currentIndex) {
+      case 0: return 'Sushi';
+      case 1: return 'Order Now';
+      case 2: return 'My Orders';
+      case 3: return 'Menu';
+      case 4: return 'Our Restaurant';
+      case 5: return 'Favorites';
+      case 6: return 'My Cart';
+      case 7: return 'My Account';
+      case 8: return 'About Us';
+      case 9: return 'Contact Us';
+      default: return 'Sushi';
+    }
+  }
+
+  // Get current content based on section
+  Widget _getContent() {
+    switch (_currentIndex) {
+      case 0: return const HomeContent();
+      case 1: return const OrderNowScreen(isShell: true);
+      case 2: return const MyOrdersScreen(isShell: true);
+      case 3: return const MenuScreen(isShell: true);
+      case 4: return const RestaurantScreen(isShell: true);
+      case 5: return const FavoritesScreen(isShell: true);
+      case 6: return const CartScreen(isShell: true);
+      case 7: return const ProfileScreen(isShell: true);
+      case 8: return const AboutUsScreen(isShell: true);
+      case 9: return const ContactUsScreen(isShell: true);
+      default: return const HomeContent();
     }
   }
 
@@ -75,68 +92,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
-        title: Image.asset('assets/images/layer_2.png', height: 50),
+        title: _currentIndex == 0 
+          ? Image.asset('assets/images/layer_2.png', height: 50)
+          : Text(_getTitle(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Color(0xFFF4A73D),
+        backgroundColor: const Color(0xFFF4A73D),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: _buildDrawer(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Top Banner Image with Orange Background to remove white gap
-            Container(
-              width: double.infinity,
-              height: 280,
-              color: AppColors.white,
-              child: Image.asset(
-                'assets/images/layer_10.png',
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(color: AppColors.lightOrange),
-              ),
-            ),
-            
-            // Offers Grid
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              // Removed negative transform to avoid cutting the image
-              child: _isLoadingOffers
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.lightOrange))
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _offers.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemBuilder: (context, index) {
-                        final offer = _offers[index];
-                        return OfferCard(
-                          offer: offer,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => OfferItemsScreen(offer: offer)),
-                            );
-                          },
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
+      body: _getContent(),
     );
   }
 
@@ -149,47 +114,22 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildDrawerItem(Icons.home_outlined, AppStrings.menuHome, () {
-                  Navigator.pop(context);
-                }),
-                _buildDrawerItem(Icons.shopping_bag_outlined, 'Order Now', () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderNowScreen()));
-                }),
-                _buildDrawerItem(Icons.list_alt_outlined, 'My Orders', () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MyOrdersScreen()));
-                }),
-                _buildDrawerItem(Icons.restaurant_menu, 'Menu', () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MenuScreen()));
-                }),
-                _buildDrawerItem(Icons.store_outlined, AppStrings.menuRestaurant, () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const RestaurantScreen()));
-                }),
-                _buildDrawerItem(Icons.favorite_border, AppStrings.menuFavorites, () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
-                }),
-                _buildDrawerItem(Icons.shopping_cart_outlined, AppStrings.menuCart, () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
-                }),
-                _buildDrawerItem(Icons.person_outline, 'My Account', () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
-                }),
+                _buildDrawerItem(Icons.home_outlined, AppStrings.menuHome, 0),
+                _buildDrawerItem(Icons.shopping_bag_outlined, 'Order Now', 1),
+                _buildDrawerItem(Icons.list_alt_outlined, 'My Orders', 2),
+                _buildDrawerItem(Icons.restaurant_menu, 'Menu', 3),
+                _buildDrawerItem(Icons.store_outlined, AppStrings.menuRestaurant, 4),
+                _buildDrawerItem(Icons.favorite_border, AppStrings.menuFavorites, 5),
+                _buildDrawerItem(Icons.shopping_cart_outlined, AppStrings.menuCart, 6),
+                _buildDrawerItem(Icons.person_outline, 'My Account', 7),
                 const Divider(),
-                _buildDrawerItem(Icons.info_outline, 'About Us', () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen()));
-                }),
-                _buildDrawerItem(Icons.contact_support_outlined, 'Contact Us', () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactUsScreen()));
-                }),
-                _buildDrawerItem(Icons.logout, AppStrings.logout, _handleLogout),
+                _buildDrawerItem(Icons.info_outline, 'About Us', 8),
+                _buildDrawerItem(Icons.contact_support_outlined, 'Contact Us', 9),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: AppColors.lightOrange),
+                  title: const Text(AppStrings.logout),
+                  onTap: _handleLogout,
+                ),
               ],
             ),
           ),
@@ -242,11 +182,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap) {
+  Widget _buildDrawerItem(IconData icon, String title, int index) {
     return ListTile(
       leading: Icon(icon, color: AppColors.lightOrange),
-      title: Text(title),
-      onTap: onTap,
+      title: Text(
+        title,
+        style: TextStyle(
+          color: _currentIndex == index ? AppColors.lightOrange : Colors.black,
+          fontWeight: _currentIndex == index ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+        Navigator.pop(context); // Close Drawer
+      },
     );
   }
 
@@ -258,5 +209,92 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
+  }
+}
+
+class HomeContent extends StatefulWidget {
+  const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  List<OfferModel> _offers = [];
+  bool _isLoadingOffers = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOffers();
+  }
+
+  void _loadOffers() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('offers').get();
+      if (mounted) {
+        setState(() {
+          _offers = snapshot.docs.map((doc) => OfferModel.fromJson(doc.data(), doc.id)).toList();
+          _isLoadingOffers = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingOffers = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            height: 280,
+            color: AppColors.white,
+            child: Image.asset(
+              'assets/images/layer_10.png',
+              fit: BoxFit.cover,
+              errorBuilder: (c, e, s) => Container(color: AppColors.lightOrange),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+            child: _isLoadingOffers
+                ? const Center(child: CircularProgressIndicator(color: AppColors.lightOrange))
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _offers.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemBuilder: (context, index) {
+                      final offer = _offers[index];
+                      return OfferCard(
+                        offer: offer,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => OfferItemsScreen(offer: offer)),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 }

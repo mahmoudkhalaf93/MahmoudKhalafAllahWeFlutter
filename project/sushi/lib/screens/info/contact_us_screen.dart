@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_colors.dart';
 
 class ContactUsScreen extends StatelessWidget {
-  const ContactUsScreen({super.key});
+  final bool isShell;
+  const ContactUsScreen({super.key, this.isShell = false});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      backgroundColor: Colors.white,
+      appBar: isShell ? null : AppBar(
         title: const Text('Contact Us'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.lightOrange,

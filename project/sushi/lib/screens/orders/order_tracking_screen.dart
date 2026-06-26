@@ -1,8 +1,10 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/order_model.dart';
+import '../../models/restaurant_model.dart';
 import '../../widgets/app_colors.dart';
 import '../../blocs/orders/orders_cubit.dart';
 
@@ -17,8 +19,58 @@ class OrderTrackingScreen extends StatefulWidget {
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   GoogleMapController? _mapController;
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
+  RestaurantModel? _restaurant;
+  BitmapDescriptor? _driverIcon, _shopIcon, _customerIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestaurantInfo();
+    _loadCustomIcons();
+  }
+
+  Future<void> _loadCustomIcons() async {
+    // Matching the exact logic and size from DriverHomeScreen
+    _driverIcon = await _getMarkerIcon(Icons.delivery_dining, Colors.orange);
+    _shopIcon = await _getMarkerIcon(Icons.restaurant, Colors.red);
+    _customerIcon = await _getMarkerIcon(Icons.person_pin_circle, Colors.blue);
+    if (mounted) setState(() {});
+  }
+
+  Future<BitmapDescriptor> _getMarkerIcon(IconData iconData, Color color) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    const double size = 60.0; // Reduced size from 120.0
+    
+    final Paint paint = Paint()..color = color;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
+    
+    final Paint borderPaint = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 4;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, borderPaint);
+
+    TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: size * 0.6,
+        fontFamily: iconData.fontFamily,
+        color: Colors.white,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2));
+
+    final image = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+  }
+
+  void _loadRestaurantInfo() async {
+    final doc = await FirebaseFirestore.instance.collection('restaurants').doc('sushir12').get();
+    if (doc.exists) {
+      setState(() => _restaurant = RestaurantModel.fromJson(doc.data()!));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +89,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           }
           
           final order = OrderModel.fromJson(snapshot.data!.data() as Map<String, dynamic>, snapshot.data!.id);
-          _updateMarkersAndPath(order);
+
+          // Auto-move camera to driver location
+          if (order.driverLocation != null) {
+            _mapController?.animateCamera(CameraUpdate.newLatLng(
+              LatLng(order.driverLocation!.latitude, order.driverLocation!.longitude)
+            ));
+          }
 
           return Column(
             children: [
@@ -47,10 +105,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     target: LatLng(order.deliveryLocation?.latitude ?? 30.0, order.deliveryLocation?.longitude ?? 31.0),
                     zoom: 14,
                   ),
-                  markers: _markers,
-                  polylines: _polylines,
                   onMapCreated: (c) => _mapController = c,
                   myLocationButtonEnabled: false,
+                  markers: _buildMarkers(order),
+                  polylines: _buildPolylines(order),
                 ),
               ),
               _buildStatusCard(order),
@@ -78,41 +136,58 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  void _updateMarkersAndPath(OrderModel order) {
-    _markers.clear();
-    _polylines.clear();
+  Set<Marker> _buildMarkers(OrderModel order) {
+    final markers = <Marker>{};
 
-    if (order.deliveryLocation != null) {
-      _markers.add(Marker(
-        markerId: const MarkerId('customer'),
-        position: LatLng(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude),
-        infoWindow: const InfoWindow(title: 'Your Location'),
-      ));
-    }
-
-    if (order.driverLocation != null) {
-      final driverLatLng = LatLng(order.driverLocation!.latitude, order.driverLocation!.longitude);
-      
-      _markers.add(Marker(
-        markerId: const MarkerId('driver'),
-        position: driverLatLng,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        infoWindow: const InfoWindow(title: 'Driver Location'),
-      ));
-
-      if (order.deliveryLocation != null) {
-        _polylines.add(Polyline(
-          polylineId: const PolylineId('route'),
-          points: [
-            driverLatLng,
-            LatLng(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude),
-          ],
-          color: const Color(0xFFF4A73D),
-          width: 5,
+    // 1. Restaurant Marker
+    if (_restaurant?.branches != null && _restaurant!.branches!.isNotEmpty) {
+      final shopLoc = _restaurant!.branches![0].location;
+      if (shopLoc != null) {
+        markers.add(Marker(
+          markerId: const MarkerId('shop'),
+          position: LatLng(shopLoc.latitude, shopLoc.longitude),
+          icon: _shopIcon ?? BitmapDescriptor.defaultMarker,
+          infoWindow: const InfoWindow(title: 'Shop'),
         ));
       }
-      _mapController?.animateCamera(CameraUpdate.newLatLng(driverLatLng));
     }
+
+    // 2. Customer Marker
+    if (order.deliveryLocation != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('customer'),
+        position: LatLng(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude),
+        icon: _customerIcon ?? BitmapDescriptor.defaultMarker,
+        infoWindow: const InfoWindow(title: 'You'),
+      ));
+    }
+
+    // 3. Driver Marker
+    if (order.driverLocation != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('driver'),
+        position: LatLng(order.driverLocation!.latitude, order.driverLocation!.longitude),
+        icon: _driverIcon ?? BitmapDescriptor.defaultMarker,
+        infoWindow: const InfoWindow(title: 'Driver'),
+      ));
+    }
+
+    return markers;
+  }
+
+  Set<Polyline> _buildPolylines(OrderModel order) {
+    if (order.driverLocation == null || order.deliveryLocation == null) return {};
+    return {
+      Polyline(
+        polylineId: const PolylineId('route'),
+        points: [
+          LatLng(order.driverLocation!.latitude, order.driverLocation!.longitude),
+          LatLng(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude),
+        ],
+        color: const Color(0xFFF4A73D),
+        width: 5,
+      )
+    };
   }
 
   Widget _buildStatusCard(OrderModel order) {
@@ -148,7 +223,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           const SizedBox(height: 20),
           LinearProgressIndicator(
-            value: _getStatusProgress(order.status),
+            value: (order.status.index + 1) / (OrderStatus.delivered.index + 1),
             backgroundColor: Colors.grey.shade200,
             minHeight: 8,
             borderRadius: BorderRadius.circular(10),
@@ -180,10 +255,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       case OrderStatus.delivered: return "Order delivered! Enjoy your meal.";
       default: return "Processing your order...";
     }
-  }
-
-  double _getStatusProgress(OrderStatus status) {
-    return (status.index + 1) / (OrderStatus.delivered.index + 1);
   }
 
   void _showCancelDialog(BuildContext context, String orderId) {
