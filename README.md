@@ -40,4 +40,75 @@
     <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170104.jpg" style="width:100%; display:block;" alt="لقطة شاشة 24"/></td>
   </tr>
   <tr style="border: none !important; background: transparent !important;">
-    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-1
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170109.jpg" style="width:100%; display:block;" alt="لقطة شاشة 25"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170142.jpg" style="width:100%; display:block;" alt="لقطة شاشة 26"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170210.jpg" style="width:100%; display:block;" alt="لقطة شاشة 27"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170224.jpg" style="width:100%; display:block;" alt="لقطة شاشة 28"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170232.jpg" style="width:100%; display:block;" alt="لقطة شاشة 29"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170257.jpg" style="width:100%; display:block;" alt="لقطة شاشة 30"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170332.jpg" style="width:100%; display:block;" alt="لقطة شاشة 31"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170353.jpg" style="width:100%; display:block;" alt="لقطة شاشة 32"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170358.jpg" style="width:100%; display:block;" alt="لقطة شاشة 33"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170404.jpg" style="width:100%; display:block;" alt="لقطة شاشة 34"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170412.jpg" style="width:100%; display:block;" alt="لقطة شاشة 35"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170630.jpg" style="width:100%; display:block;" alt="لقطة شاشة 36"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170633.jpg" style="width:100%; display:block;" alt="لقطة شاشة 37"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170641.jpg" style="width:100%; display:block;" alt="لقطة شاشة 38"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170644.jpg" style="width:100%; display:block;" alt="لقطة شاشة 39"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170656.jpg" style="width:100%; display:block;" alt="لقطة شاشة 40"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170659.jpg" style="width:100%; display:block;" alt="لقطة شاشة 41"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170740.jpg" style="width:100%; display:block;" alt="لقطة شاشة 42"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-170746.jpg" style="width:100%; display:block;" alt="لقطة شاشة 43"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171628_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 1"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171700_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 2"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171709_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 3"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171719_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 4"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171731_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 5"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171813_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 6"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171835_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 7"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171848_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 8"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171852_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 9"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171857_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 10"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171901_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 11"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171909_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 12"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171913_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 13"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171931_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 14"/></td>
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171939_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 15"/></td>
+  </tr>
+  <tr style="border: none !important; background: transparent !important;">
+    <td style="padding: 4px; border: none !important;"><img src="screenshots/Screenshot_20260701-171943_Samsung Browser.jpg" style="width:100%; display:block;" alt="متصفح سامسونج 16"/></td>
+    <td style="padding: 4px; border: none !important;"></td>
+  </tr>
+</table>
